@@ -29,7 +29,20 @@ function createRoom(x, y)
         k.outline(3, k.rgb(0, 0, 0)),
         {
             hovered : false,
-            isReflectedRoom : false
+            isReflectedRoom : false,
+            left() {
+                return this.pos.x - roomDim / 2;
+            },
+            right() {
+                return this.pos.x + roomDim / 2;
+            },
+            top() {
+                return this.pos.y - roomDim / 2;
+            },
+            bottom() {
+                return this.pos.y + roomDim / 2;
+            },
+            // left : owningRoom.pos.x  + roomDim / 2
         }
     ]);
 
@@ -81,27 +94,27 @@ function createPlayer(x,y,owningRoom)
 
     player.onUpdate(() => {
         //left wall
-        if(obj.pos.x  < owningRoom.pos.x - roomDim / 2)
+        if(player.pos.x  < owningRoom.left())
         {
-            obj.pos.x = owningRoom.pos.x  - roomDim / 2;
+            player.pos.x = owningRoom.left();
         }
     
         //right wall
-        if(obj.pos.x  > owningRoom.pos.x + roomDim / 2)
+        if(player.pos.x  > owningRoom.right())
         {
-            obj.pos.x = owningRoom.pos.x  + roomDim / 2;
+            player.pos.x = owningRoom.right();
         }
     
         //bottom wall
-        if(obj.pos.y  > owningRoom.pos.y + roomDim / 2)
+        if(player.pos.y  > owningRoom.bottom())
         {
-            obj.pos.y = owningRoom.pos.y  + roomDim / 2;
+            player.pos.y = owningRoom.bottom();
         }
     
         //top wall
-        if(obj.pos.y  < owningRoom.pos.y - roomDim / 2)
+        if(player.pos.y  < owningRoom.top())
         {
-            obj.pos.y = owningRoom.pos.y - roomDim / 2 ;
+            player.pos.y = owningRoom.top() ;
         }
     });
 
@@ -119,8 +132,8 @@ function createPlayer(x,y,owningRoom)
 function createObject(x,y,owningRoom)
 {
     let triangleHeight = 40;
-    let object = k.add([
-        k.rotate(90),
+    let obj = k.add([
+        k.rotate(270),
         k.pos(x, y),
         drag(),
         k.polygon([
@@ -135,8 +148,8 @@ function createObject(x,y,owningRoom)
             ],
         }),
         k.color(153,50,204),
-        k.area(),
-        k.anchor("botleft"),
+        k.area({ shape: new k.Rect(k.vec2(0,triangleHeight/2), triangleHeight, triangleHeight)}),
+        k.anchor("center"),
         // k.anchor(k.vec2(0.0, 0.5)),
         k.body(),
         k.outline(3, k.rgb(255, 0, 0)),
@@ -145,32 +158,54 @@ function createObject(x,y,owningRoom)
         }
     ]);
 
+    // object.anchor = k.vec2(0.5, 0.5);
+
     //we have to buffer this based on where the anchor is for the shape ("top" point)
-    object.onUpdate(() => {
-        let offset = k.vec2(0, triangleHeight);
-        //left wall
-        if(obj.pos.x - triangleHeight < owningRoom.pos.x - roomDim / 2)
-        {
-            obj.pos.x = owningRoom.pos.x - roomDim / 2 + triangleHeight ;
+    obj.onUpdate(() => {
+        const halfHeight = triangleHeight / 2;
+    
+        // get center of triangle based on angle (pivot is at top of triangle) 
+        let centerX, centerY;
+        switch (obj.angle) {
+            case 0: // Pointing up
+                centerX = obj.pos.x;
+                centerY = obj.pos.y + halfHeight;
+                break;
+            case 90: // Pointing right
+                centerX = obj.pos.x - halfHeight;
+                centerY = obj.pos.y;
+                break;
+            case 180: // Pointing down
+                centerX = obj.pos.x;
+                centerY = obj.pos.y - halfHeight;
+                break;
+            case 270: // Pointing left
+                centerX = obj.pos.x + halfHeight;
+                centerY = obj.pos.y;
+                break;
+            default:
+                console.error("Unsupported angle");
+                return;
         }
     
-        //right wall
-        if(obj.pos.x > owningRoom.pos.x + roomDim / 2)
+        // Adjust position based on centered bounding box
+        if (centerX - halfHeight < owningRoom.left()) 
         {
-            obj.pos.x = owningRoom.pos.x + roomDim / 2;
+            obj.pos.x += owningRoom.left() - (centerX - halfHeight);
+        }
+        if (centerX + halfHeight > owningRoom.right())
+        {
+            obj.pos.x -= (centerX + halfHeight) - owningRoom.right();
+        }
+        if (centerY - halfHeight < owningRoom.top())
+        {
+            obj.pos.y += owningRoom.top() - (centerY - halfHeight);
+        }
+        if (centerY + halfHeight > owningRoom.bottom())
+        {
+            obj.pos.y -= (centerY + halfHeight) - owningRoom.bottom();
         }
     
-        //bottom wall
-        if(obj.pos.y + ybuffer > owningRoom.pos.y + roomDim / 2)
-        {
-            obj.pos.y = owningRoom.pos.y - ybuffer + roomDim / 2;
-        }
-    
-        //top wall
-        if(obj.pos.y - ybuffer < owningRoom.pos.y - roomDim / 2)
-        {
-            obj.pos.y = owningRoom.pos.y - roomDim / 2 + ybuffer;
-        }
     });
 
 
@@ -182,7 +217,7 @@ function createObject(x,y,owningRoom)
     //     k.debug.log("drag update");
     // });
 
-    return object;
+    return obj;
 }
 
 function createWall(x, y, width, height,rotation = 0)
