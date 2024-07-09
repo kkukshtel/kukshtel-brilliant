@@ -1,11 +1,9 @@
-//import k from main.ts
-import { k } from "./main";
+import { KaboomCtx } from "kaplay";
 
 // Keep track of the current draggin item
-let curDraggin = null;
+export let curDraggin = null;
 
-// A custom component for handling drag & drop behavior
-export function drag() {
+export function drag(k: KaboomCtx) {
     // The displacement between object pos and mouse pos
     let offset = k.vec2(0);
 
@@ -39,27 +37,6 @@ export function drag() {
     };
 }
 
-
-// Check if someone is picked
-k.onMousePress(() => {
-    if (curDraggin) {
-        return;
-    }
-    // Loop all "bean"s in reverse, so we pick the topmost one
-    for (const obj of k.get("drag").reverse()) {
-        // If mouse is pressed and mouse position is inside, we pick
-        if (obj.isHovering()) {
-            obj.pick();
-            break;
-        }
-    }
-});
-
-// Drop whatever is dragged on mouse release
-k.onMouseRelease(() => {
-    if (curDraggin) {
-        curDraggin.trigger("dragEnd");
-        curDraggin = null;
-    }
-});
-
+export function clearDrag() {
+    curDraggin = null;
+}
