@@ -5,7 +5,17 @@ import { clearDrag, curDraggin } from "./components/drag";
 import { createWall } from "./prims/wall";
 import { createRoom } from "./prims/room";
 
-export const k = startGame()
+export enum Direction {
+    North,
+    South,
+    East,
+    West
+}
+
+export const roomDim = 200;
+export const roomRowLength = 5;
+export const k = startGame();
+
 k.setBackground(20,20,20);
 k.debug.log(k.VERSION);
 
@@ -16,24 +26,14 @@ k.debug.log(k.VERSION);
 */
 //linejoindrag
 
-export const roomDim = 200;
-export const roomRowLength = 5;
 
-let rooms = [];
+export let rooms = [];
 let roomStartX = (k.width() / 2) - (roomDim * roomRowLength / 2) + roomDim / 2
 let roomStartY = (k.height() / 2) - (roomDim * roomRowLength / 2) + roomDim / 2
 
-let walls = [];
-
+export let walls = [];
 let center = Math.floor(roomRowLength / 2);
 const mainRoomIndex = center * roomRowLength + center;
-
-export enum Direction {
-    North,
-    South,
-    East,
-    West
-}
 
 //create the rooms
 for (let y = 0; y < roomRowLength; y++) {
@@ -85,42 +85,16 @@ for (let y = 0; y < roomRowLength; y++) {
     }
 }
 
-function getRoomInDirectionFromRoom(room, direction : Direction)
-{
-    let roomIndex = rooms.indexOf(room);
-    switch (direction) {
-        case Direction.North:
-            if(room.X - roomRowLength < 0)
-            {
-                return null;
-            }
-            return rooms[roomIndex - roomRowLength];
-        case Direction.South:
-            if(room.X + roomRowLength >= rooms.length)
-            {
-                return null;
-            }
-            return rooms[roomIndex + roomRowLength];
-        case Direction.East:
-            if(room.x == roomRowLength - 1)
-            {
-                return null;
-            }
-            return rooms[roomIndex + 1];
-        case Direction.West:
-            if(room.x == 0)
-            {
-                return null;
-            }
-            return rooms[roomIndex - 1];
-        default:
-            return null;
-    }
-}
 
-const mainRoom = rooms[mainRoomIndex];
-const player = createPlayer(k,k.width() /2, k.height() / 2, mainRoom);
-const obj = createObject(k,k.width() /2, k.height() / 2, 90, mainRoom);
+
+export const mainRoom = rooms[mainRoomIndex];
+mainRoom.addPlayer();
+mainRoom.addObject();
+// mainRoom.addElement(createPlayer(k,k.width() /2, k.height() / 2,mainRoom));
+// mainRoom.addElement(createObject(k,k.width() /2, k.height() / 2, 90,mainRoom));
+
+// const player = createPlayer(k,k.width() /2, k.height() / 2, mainRoom);
+// const obj = createObject(k,k.width() /2, k.height() / 2, 90, mainRoom);
 
 // player.checkCollision()
 // Check if someone is picked

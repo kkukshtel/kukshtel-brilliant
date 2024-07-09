@@ -1,4 +1,6 @@
-import { roomDim } from "../main";
+import { Direction, mainRoom, roomDim, roomRowLength, rooms } from "../main";
+import { createObject } from "./object";
+import { createPlayer } from "./player";
 
 export function createRoom(k,x, y, xindex, yindex)
 {
@@ -27,6 +29,28 @@ export function createRoom(k,x, y, xindex, yindex)
             bottom() {
                 return this.pos.y + roomDim / 2;
             },
+            addPlayer() {
+                if(this === mainRoom)
+                {
+                    let player = createPlayer(k,x,y,this);
+                    rooms.forEach(room => {
+                        if(room === mainRoom) return;
+                        let additionalPlayer = createPlayer(k,room.x,room.y,room,true);
+                        player.addReflection(additionalPlayer, room);
+                    });
+                }
+            },
+            addObject() {
+                if(this === mainRoom)
+                {
+                    let obj = createObject(k,x,y,90,this);
+                    rooms.forEach(room => {
+                        if(room === mainRoom) return;
+                        let reflectedObject = createObject(k,room.x,room.y,90,room,true);
+                        obj.addReflection(reflectedObject, room);
+                    });
+                }
+            }
         }
     ]);
 
@@ -41,4 +65,37 @@ export function createRoom(k,x, y, xindex, yindex)
     });
 
     return newRoom;
+}
+
+function getRoomInDirectionFromRoom(room, direction : Direction)
+{
+    let roomIndex = rooms.indexOf(room);
+    switch (direction) {
+        case Direction.North:
+            if(room.X - roomRowLength < 0)
+            {
+                return null;
+            }
+            return rooms[roomIndex - roomRowLength];
+        case Direction.South:
+            if(room.X + roomRowLength >= rooms.length)
+            {
+                return null;
+            }
+            return rooms[roomIndex + roomRowLength];
+        case Direction.East:
+            if(room.x == roomRowLength - 1)
+            {
+                return null;
+            }
+            return rooms[roomIndex + 1];
+        case Direction.West:
+            if(room.x == 0)
+            {
+                return null;
+            }
+            return rooms[roomIndex - 1];
+        default:
+            return null;
+    }
 }
