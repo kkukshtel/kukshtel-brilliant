@@ -57,6 +57,7 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
                         let additionalPlayer = createPlayer(k,room.x,room.y,room,true);
                         player.addReflection(additionalPlayer, room);
                     });
+                    return player;
                 }
             },
             addObject() {
@@ -68,6 +69,7 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
                         let reflectedObject = createObject(k,room.x,room.y,90,room,true);
                         obj.addReflection(reflectedObject, room);
                     });
+                    return obj;
                 }
             },
             getWalls() {

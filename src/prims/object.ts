@@ -1,7 +1,8 @@
 import { KaboomCtx } from "kaplay";
 import { drag } from "../components/drag";
-import { roomDim } from "../main";
+import { player, roomDim } from "../main";
 
+let rayPreview = null;
 export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection = false)
 {
     let triangleHeight = 40;
@@ -23,7 +24,7 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection 
             ],
         }),
         k.color(153,50,204),
-        // k.area({ shape: new k.Rect(k.vec2(0,triangleHeight/2), triangleHeight, triangleHeight)}),
+        k.area({ shape: new k.Rect(k.vec2(0,triangleHeight/2), triangleHeight, triangleHeight)}),
         // k.anchor("center"),
         // k.body(),
         k.outline(3, k.rgb(255, 0, 0)),
@@ -41,11 +42,40 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection 
 
     if(!isReflection)
     {
-        obj.use(k.area({ shape: new k.Rect(k.vec2(0,triangleHeight/2), triangleHeight, triangleHeight)}));
+        // obj.use(k.area({ shape: new k.Rect(k.vec2(0,triangleHeight/2), triangleHeight, triangleHeight)}));
         obj.use(drag(k));
         obj.use(k.anchor("center"));
         obj.use(k.body());
     }
+
+    
+    if(obj.isReflection)
+    {
+        obj.onHover(() => {
+            k.debug.log(obj.pos + " " + player.pos);
+            // rayPreview = 
+            // {
+            //     pts: [
+            //         obj.pos,
+            //         player.pos,
+            //     ],
+            //     join: "bevel",
+            //     cap: "round",
+            //     width: 20,
+            // }
+        });
+
+        obj.onHoverEnd(() => {
+            rayPreview = null;
+        });
+    }
+
+    k.onDraw(() => {
+        if(rayPreview)
+        {
+            k.drawLine(rayPreview);
+        }
+    });
     
 
     if(!obj.isReflection)
@@ -124,15 +154,6 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection 
         
         });
     }
-
-
-    // player.onDrag(() => {
-    //     k.debug.log("dragging player");
-    // });
-    
-    // player.onDragUpdate(() => {
-    //     k.debug.log("drag update");
-    // });
 
     return obj;
 }

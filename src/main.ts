@@ -1,6 +1,4 @@
 import startGame, { Anchor } from "kaplay"
-import { createObject } from "./prims/object";
-import { createPlayer } from "./prims/player";
 import { clearDrag, curDraggin } from "./components/drag";
 import { createWall } from "./prims/wall";
 import { createRoom, setRoomEnabled } from "./prims/room";
@@ -119,7 +117,7 @@ walls.forEach(wall => {
         k.readd(wall);
     }
 });
-mainRoom.addPlayer();
+export const player = mainRoom.addPlayer();
 mainRoom.addObject();
 
 let mainRoomWallState = {
@@ -212,6 +210,7 @@ k.onMouseRelease(() => {
         clearDrag();
     }
 });
+
 
 
 
