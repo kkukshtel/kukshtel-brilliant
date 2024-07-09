@@ -105,6 +105,12 @@ for (let y = 0; y < roomRowLength; y++) {
 
 
 export const mainRoom = rooms[mainRoomIndex];
+const mainAdjacentRooms = [
+    mainRoom.northRoom(),
+    mainRoom.southRoom(),
+    mainRoom.eastRoom(),
+    mainRoom.westRoom()
+];
 //make sure all the main room stuff is on "top"
 k.readd(mainRoom);
 walls.forEach(wall => {
@@ -116,7 +122,7 @@ walls.forEach(wall => {
 mainRoom.addPlayer();
 mainRoom.addObject();
 
-let mainRoomState = {
+let mainRoomWallState = {
     [Direction.North] : false, 
     [Direction.South] : false, 
     [Direction.East] : false, 
@@ -124,14 +130,36 @@ let mainRoomState = {
 }
 export function updateMainRoomWallState(wall)
 {
-    mainRoomState[wall.mainRoomWallDirection] = wall.reflecting;
+    mainRoomWallState[wall.mainRoomWallDirection] = wall.reflecting;
     //can set adjacents easily
-    setRoomEnabled(k,mainRoom.northRoom(),mainRoomState[Direction.North]);
-    setRoomEnabled(k,mainRoom.southRoom(),mainRoomState[Direction.South]);
-    setRoomEnabled(k,mainRoom.eastRoom(),mainRoomState[Direction.East]);
-    setRoomEnabled(k,mainRoom.westRoom(),mainRoomState[Direction.West]);
+    setRoomEnabled(k,mainRoom.northRoom(),mainRoomWallState[Direction.North]);
+    setRoomEnabled(k,mainRoom.southRoom(),mainRoomWallState[Direction.South]);
+    setRoomEnabled(k,mainRoom.eastRoom(),mainRoomWallState[Direction.East]);
+    setRoomEnabled(k,mainRoom.westRoom(),mainRoomWallState[Direction.West]);
 
-    //turn off all walls excpet main room walls
+    //kind of hacky way to toggle the walls on/off based on mirror state
+    //could potentialyl instead raycast to the distant objects and toggle on/off as part of how the ray collides
+    rooms.forEach(room => {
+        if(room.isMainRoom || mainAdjacentRooms.includes(room) ){return;} //we handle these above 
+        setRoomEnabled(k,room,false);
+        if (
+            (mainRoomWallState[Direction.North] && mainRoomWallState[Direction.South] && room.xIndex === mainRoom.xIndex) ||
+            (mainRoomWallState[Direction.East] && mainRoomWallState[Direction.West] && room.yIndex === mainRoom.yIndex) ||
+            (mainRoomWallState[Direction.North] && mainRoomWallState[Direction.East] && room.xIndex >= mainRoom.xIndex && room.yIndex <= mainRoom.yIndex) ||
+            (mainRoomWallState[Direction.North] && mainRoomWallState[Direction.West] && room.xIndex <= mainRoom.xIndex && room.yIndex <= mainRoom.yIndex) ||
+            (mainRoomWallState[Direction.South] && mainRoomWallState[Direction.East] && room.xIndex >= mainRoom.xIndex && room.yIndex >= mainRoom.yIndex) ||
+            (mainRoomWallState[Direction.South] && mainRoomWallState[Direction.West] && room.xIndex <= mainRoom.xIndex && room.yIndex >= mainRoom.yIndex)
+        ) {
+            setRoomEnabled(k, room, true);
+        }
+
+        room.getWalls().forEach(wall => {
+            if(wall.isMainRoomWall){return;}
+            wall.setVisible(false);
+        });
+    });
+
+    //turn off all walls except main room walls
     rooms.forEach(room => {
         room.getWalls().forEach(wall => {
             if(wall.isMainRoomWall){return;}
