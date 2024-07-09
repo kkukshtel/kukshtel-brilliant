@@ -14,10 +14,105 @@ k.debug.log(k.VERSION);
 */
 //linejoindrag
 
-const roomDim = 250;
+const roomDim = 200;
+const roomRowLength = 5;
+
+let rooms = [];
+let roomStartX = (k.width() / 2) - (roomDim * roomRowLength / 2) + roomDim / 2
+let roomStartY = (k.height() / 2) - (roomDim * roomRowLength / 2) + roomDim / 2
+
+let walls = [];
+
+let center = Math.floor(roomRowLength / 2);
+const mainRoomIndex = center * roomRowLength + center;
+
+enum Direction {
+    North,
+    South,
+    East,
+    West
+}
+
+//create the rooms
+for (let y = 0; y < roomRowLength; y++) {
+    for (let x = 0; x < roomRowLength; x++) {
+        let roomCenter = k.vec2(roomStartX + x * roomDim, roomStartY + y * roomDim);
+        let room = createRoom(roomCenter.x, roomCenter.y,x,y)
+        rooms.push(room);
+        if(y * roomRowLength + x !== mainRoomIndex)
+        {
+            room.isReflectedRoom = true;
+        }
+    }
+}
+
+//create the walls
+let wallWidth = 16;
+let wallLengh = roomDim - wallWidth * 2;
+for (let y = 0; y < roomRowLength; y++) {
+    for (let x = 0; x < roomRowLength; x++) {
+        let room = rooms[Math.floor(y * roomRowLength + x)];
+        // bottom
+        walls.push(createWall(room.right() - wallWidth, room.bottom() - wallWidth / 2, wallLengh , wallWidth, Direction.South));
+        // right
+        walls.push(createWall(room.right() - wallWidth / 2, room.top() + wallWidth, wallLengh, wallWidth, Direction.East));
+        if(y == 0)
+        {
+            //top
+            walls.push(createWall(room.left() + wallWidth, room.top() + wallWidth / 2, wallLengh, wallWidth, Direction.North));
+        }
+        if(x == 0)
+        {
+            //left
+            walls.push(createWall(room.left() + wallWidth / 2, room.bottom() - wallWidth , wallLengh, wallWidth, Direction.West));
+        }
+
+        if(room.isReflectedRoom)
+        {
+            //toggle off wall interaction
+        }
+        else
+        {
+            //this is the main room
+        }
+    }
+}
+
+function getRoomInDirectionFromRoom(room, direction : Direction)
+{
+    let roomIndex = rooms.indexOf(room);
+    switch (direction) {
+        case Direction.North:
+            if(room.X - roomRowLength < 0)
+            {
+                return null;
+            }
+            return rooms[roomIndex - roomRowLength];
+        case Direction.South:
+            if(room.X + roomRowLength >= rooms.length)
+            {
+                return null;
+            }
+            return rooms[roomIndex + roomRowLength];
+        case Direction.East:
+            if(room.x == roomRowLength - 1)
+            {
+                return null;
+            }
+            return rooms[roomIndex + 1];
+        case Direction.West:
+            if(room.x == 0)
+            {
+                return null;
+            }
+            return rooms[roomIndex - 1];
+        default:
+            return null;
+    }
+}
 
 //function that creates and returns a room
-function createRoom(x, y)
+function createRoom(x, y, xindex, yindex)
 {
     let newRoom = k.add([
         k.rotate(0),
@@ -29,6 +124,8 @@ function createRoom(x, y)
         k.outline(3, k.rgb(0, 0, 0)),
         {
             hovered : false,
+            xIndex : xindex,
+            yIndex : yindex,
             isReflectedRoom : false,
             left() {
                 return this.pos.x - roomDim / 2;
@@ -42,25 +139,13 @@ function createRoom(x, y)
             bottom() {
                 return this.pos.y + roomDim / 2;
             },
-            // left : owningRoom.pos.x  + roomDim / 2
         }
     ]);
-
-    // note: anchor becomes 0,0 for children
-    let off =  roomDim / 2;
-    //top
-    newRoom.add(createWall(-off,-off, roomDim, 15));
-    //right
-    newRoom.add(createWall(off,-off, roomDim, 15,  90));
-    //bottom
-    newRoom.add(createWall(off,off, roomDim, 15, 180));
-    //left
-    newRoom.add(createWall(-off,off, roomDim, 15, 270));
 
     newRoom.onHover(() => {
         newRoom.hovered = true;
         newRoom.color = k.rgb(40,40,40);
-        // k.debug.log("hovering over room");
+        k.debug.log("hovering over " + newRoom.xIndex + " " + newRoom.yIndex);
     });
     
     newRoom.onHoverEnd(() => {
@@ -74,7 +159,6 @@ function createRoom(x, y)
 function createPlayer(x,y,owningRoom)
 {
     let playerSize = 20;
-    let playerDiameter = playerSize * 2;
     let player = k.add([
         k.rotate(0),
         k.pos(x, y),
@@ -88,33 +172,34 @@ function createPlayer(x,y,owningRoom)
         k.outline(3, k.rgb(255, 0, 255)),
         {
             hovered : false,
-            owningRoom : owningRoom
+            owningRoom : owningRoom,
+            draggable : !owningRoom.isReflectedRoom
         }
     ]);
 
     player.onUpdate(() => {
         //left wall
-        if(player.pos.x  < owningRoom.left())
+        if(player.pos.x - playerSize  < owningRoom.left())
         {
-            player.pos.x = owningRoom.left();
+            player.pos.x = owningRoom.left() + playerSize;
         }
     
         //right wall
-        if(player.pos.x  > owningRoom.right())
+        if(player.pos.x + playerSize  > owningRoom.right())
         {
-            player.pos.x = owningRoom.right();
+            player.pos.x = owningRoom.right() - playerSize;
         }
     
         //bottom wall
-        if(player.pos.y  > owningRoom.bottom())
+        if(player.pos.y + playerSize  > owningRoom.bottom())
         {
-            player.pos.y = owningRoom.bottom();
+            player.pos.y = owningRoom.bottom() - playerSize;
         }
     
         //top wall
-        if(player.pos.y  < owningRoom.top())
+        if(player.pos.y - playerSize  < owningRoom.top())
         {
-            player.pos.y = owningRoom.top() ;
+            player.pos.y = owningRoom.top() + playerSize;
         }
     });
 
@@ -129,13 +214,14 @@ function createPlayer(x,y,owningRoom)
     return player;
 }
 
-function createObject(x,y,owningRoom)
+function createObject(x,y,rotation,owningRoom)
 {
     let triangleHeight = 40;
     let obj = k.add([
-        k.rotate(270),
+        k.rotate(rotation),
         k.pos(x, y),
         drag(),
+        // laser(),
         k.polygon([
             k.vec2(0, 0),
             k.vec2(triangleHeight / 2, triangleHeight),
@@ -150,36 +236,34 @@ function createObject(x,y,owningRoom)
         k.color(153,50,204),
         k.area({ shape: new k.Rect(k.vec2(0,triangleHeight/2), triangleHeight, triangleHeight)}),
         k.anchor("center"),
-        // k.anchor(k.vec2(0.0, 0.5)),
         k.body(),
         k.outline(3, k.rgb(255, 0, 0)),
         {
-            hovered : false
+            hovered : false,
+            draggable : !owningRoom.isReflectedRoom,
         }
     ]);
-
-    // object.anchor = k.vec2(0.5, 0.5);
-
-    //we have to buffer this based on where the anchor is for the shape ("top" point)
-    obj.onUpdate(() => {
-        const halfHeight = triangleHeight / 2;
     
-        // get center of triangle based on angle (pivot is at top of triangle) 
+
+    obj.onUpdate(() => {
+        //kaplay pivots dont work for custom polygon shapes
+        //so we have to calculate the center of the triangle based on the angle and adjust position from that
+        const halfHeight = triangleHeight / 2;
         let centerX, centerY;
         switch (obj.angle) {
-            case 0: // Pointing up
+            case 0:
                 centerX = obj.pos.x;
                 centerY = obj.pos.y + halfHeight;
                 break;
-            case 90: // Pointing right
+            case 90: //pointing right
                 centerX = obj.pos.x - halfHeight;
                 centerY = obj.pos.y;
                 break;
-            case 180: // Pointing down
+            case 180:
                 centerX = obj.pos.x;
                 centerY = obj.pos.y - halfHeight;
                 break;
-            case 270: // Pointing left
+            case 270:
                 centerX = obj.pos.x + halfHeight;
                 centerY = obj.pos.y;
                 break;
@@ -220,12 +304,17 @@ function createObject(x,y,owningRoom)
     return obj;
 }
 
-function createWall(x, y, width, height,rotation = 0)
+//create an enum type that has options for north/south/east/west
+
+
+function createWall(x, y, width, height, direction : Direction)
 {
-    let wall = k.make([
+    let wall = k.add([
         k.pos(x, y),
         k.anchor("botleft"),
-        k.rotate(rotation),
+        k.rotate(direction == Direction.East ? 90 : 
+                 direction == Direction.South ? 180 :
+                 direction == Direction.West ? 270 : 0),
         k.rect(width, height),
         k.color(60,60,60),
         k.area(),
@@ -254,9 +343,9 @@ function createWall(x, y, width, height,rotation = 0)
     return wall;
 }
 
-const startingRoom = createRoom(k.width() /2, k.height() / 2);
-const player = createPlayer(k.width() /2, k.height() / 2, startingRoom);
-const obj = createObject(k.width() /2, k.height() / 2, startingRoom);
+const mainRoom = rooms[mainRoomIndex];
+const player = createPlayer(k.width() /2, k.height() / 2, mainRoom);
+const obj = createObject(k.width() /2, k.height() / 2, 90, mainRoom);
 
 // player.checkCollision()
 
@@ -313,7 +402,7 @@ k.loadSprite("bean", "sprites/bean.png")
 let curDraggin = null;
 
 // A custom component for handling drag & drop behavior
-export function drag() {
+function drag() {
     // The displacement between object pos and mouse pos
     let offset = k.vec2(0);
 
@@ -356,7 +445,7 @@ k.onMousePress(() => {
     // Loop all objects in reverse, so we pick the topmost one
     for (const obj of k.get("drag").reverse()) {
         // If mouse is pressed and mouse position is inside, we pick
-        if (obj.isHovering()) {
+        if (obj.isHovering() && obj.draggable) {
             obj.pick();
             break;
         }
@@ -370,3 +459,89 @@ k.onMouseRelease(() => {
         curDraggin = null;
     }
 });
+
+//raycast
+function laser() {
+    return {
+        draw() {
+            k.drawTriangle({
+                p1: k.vec2(-16, -16),
+                p2: k.vec2(16, 0),
+                p3: k.vec2(-16, 16),
+                pos: k.vec2(0, 0),
+                color: this.color,
+            });
+            // if (this.showRing || this.is("turn")) {
+            //     k.drawCircle({
+            //         pos: k.vec2(0, 0),
+            //         radius: 28,
+            //         outline: {
+            //             color: k.RED,
+            //             width: 4,
+            //         },
+            //         fill: false,
+            //     });
+            // }
+            k.debug.log(-this.angle);
+            k.pushTransform();
+            k.pushRotate(-this.angle);
+            const MAX_TRACE_DEPTH = 3;
+            const MAX_DISTANCE = 400;
+            let origin = this.pos;
+            let direction = k.Vec2.fromAngle(this.angle).scale(MAX_DISTANCE);
+            let traceDepth = 0;
+            while (traceDepth < MAX_TRACE_DEPTH) {
+                const hit = k.raycast(origin, direction, ["laser"]);
+                if (!hit) {
+                    k.drawLine({
+                        p1: origin.sub(this.pos),
+                        p2: origin.add(direction).sub(this.pos),
+                        width: 1,
+                        color: this.color,
+                    });
+                    break;
+                }
+                const pos = hit.point.sub(this.pos);
+                // Draw hit point
+                k.drawCircle({
+                    pos: pos,
+                    radius: 4,
+                    color: this.color,
+                });
+                // Draw hit normal
+                k.drawLine({
+                    p1: pos,
+                    p2: pos.add(hit.normal.scale(20)),
+                    width: 1,
+                    color: k.BLUE,
+                });
+                // Draw hit distance
+                k.drawLine({
+                    p1: origin.sub(this.pos),
+                    p2: pos,
+                    width: 1,
+                    color: this.color,
+                });
+                // Offset the point slightly, otherwise it might be too close to the surface
+                // and give internal reflections
+                origin = hit.point.add(hit.normal.scale(0.001));
+                // Reflect vector
+                direction = direction.reflect(hit.normal);
+                traceDepth++;
+            }
+            k.popTransform();
+        },
+        showRing: false,
+    };
+}
+// const ray = k.add([
+//     k.pos(854, 442),
+//     k.rotate(-60),
+//     k.anchor("center"),
+//     k.rect(64, 64),
+//     k.area(),
+//     laser(),
+//     k.color(k.RED),
+//     k.opacity(0.0),
+//     "laser",
+// ]);
