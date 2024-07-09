@@ -8,6 +8,7 @@ export function createPlayer(k : KaboomCtx,x,y,owningRoom,isReflection = false)
     let player = k.add([
         k.rotate(0),
         k.pos(x, y),
+        "moveableObj",
         // drag(k),
         // k.drawTriangle({p1 : k.vec2(0, -20), p2 : k.vec2(10, 10), p3 : k.vec2(-10, 10)}),
         k.circle(playerSize),

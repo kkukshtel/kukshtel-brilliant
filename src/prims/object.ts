@@ -8,6 +8,7 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection 
     let obj = k.add([
         k.rotate(rotation),
         k.pos(x, y),
+        "moveableObj",
         // drag(k),
         // laser(),
         k.polygon([

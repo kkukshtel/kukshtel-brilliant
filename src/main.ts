@@ -3,7 +3,7 @@ import { createObject } from "./prims/object";
 import { createPlayer } from "./prims/player";
 import { clearDrag, curDraggin } from "./components/drag";
 import { createWall } from "./prims/wall";
-import { createRoom } from "./prims/room";
+import { createRoom, setRoomEnabled } from "./prims/room";
 
 export enum Direction {
     North,
@@ -15,8 +15,9 @@ export enum Direction {
 export const roomDim = 200;
 export const roomRowLength = 5;
 export const k = startGame();
+export const backgroundColor = k.color(20,20,20);
 
-k.setBackground(20,20,20);
+k.setBackground(backgroundColor.color);
 k.debug.log(k.VERSION);
 
 //look at 
@@ -44,9 +45,11 @@ for (let y = 0; y < roomRowLength; y++) {
         let roomIndex = y * roomRowLength + x;
         let isMainRoom = roomIndex === mainRoomIndex;
         room.isReflectedRoom = !isMainRoom;
-
-
-        let roomDiff = k.vec2(x - center, y - center);
+        room.isMainRoom = isMainRoom;
+        setRoomEnabled(k,room,isMainRoom);
+        // if(!isMainRoom)
+        // {
+        // }
     }
 }
 
@@ -57,30 +60,44 @@ for (let y = 0; y < roomRowLength; y++) {
     for (let x = 0; x < roomRowLength; x++) {
         let room = rooms[Math.floor(y * roomRowLength + x)];
         // bottom
-        walls.push(createWall(k,room.right() - wallWidth, room.bottom() - wallWidth / 2, wallLengh , wallWidth, Direction.South));
-        // right
-        walls.push(createWall(k,room.right() - wallWidth / 2, room.top() + wallWidth, wallLengh, wallWidth, Direction.East));
+        let bottom = createWall(k,room.right() - wallWidth, room.bottom() - wallWidth / 2, wallLengh , wallWidth, 180);
+        walls.push(bottom);
+        //right
+        let right = createWall(k,room.right() - wallWidth / 2, room.top() + wallWidth, wallLengh, wallWidth, 90);
+        walls.push(right);
+
+        if(x == center)
+        {
+            if( y == center - 1)
+            {
+                //this is the bottom wall that forms the top of the main room
+                bottom.setAsMainRoomWall(Direction.North);
+            }
+            if(y == center)
+            {
+                //this is the bottom wall of the main room
+                bottom.setAsMainRoomWall(Direction.South);
+
+                //this is the right wall in the main room
+                right.setAsMainRoomWall(Direction.East);
+            } 
+        }
+
+        if(y == center && x == center - 1)
+        {
+            //this is the right wall that forms the left wall of the main room
+            right.setAsMainRoomWall(Direction.West);
+        }
+
         if(y == 0)
         {
             //top
-            walls.push(createWall(k,room.left() + wallWidth, room.top() + wallWidth / 2, wallLengh, wallWidth, Direction.North));
+            walls.push(createWall(k,room.left() + wallWidth, room.top() + wallWidth / 2, wallLengh, wallWidth, 0));
         }
         if(x == 0)
         {
             //left
-            walls.push(createWall(k,room.left() + wallWidth / 2, room.bottom() - wallWidth , wallLengh, wallWidth, Direction.West));
-        }
-
-
-        //need to set non main room walls to be non interactable
-
-        if(room.isReflectedRoom)
-        {
-            //toggle off wall interaction
-        }
-        else
-        {
-            //this is the main room
+            walls.push(createWall(k,room.left() + wallWidth / 2, room.bottom() - wallWidth , wallLengh, wallWidth, 270));
         }
     }
 }
@@ -88,13 +105,61 @@ for (let y = 0; y < roomRowLength; y++) {
 
 
 export const mainRoom = rooms[mainRoomIndex];
+//make sure all the main room stuff is on "top"
+k.readd(mainRoom);
+walls.forEach(wall => {
+    if(wall.isMainRoomWall)
+    {
+        k.readd(wall);
+    }
+});
 mainRoom.addPlayer();
 mainRoom.addObject();
-// mainRoom.addElement(createPlayer(k,k.width() /2, k.height() / 2,mainRoom));
-// mainRoom.addElement(createObject(k,k.width() /2, k.height() / 2, 90,mainRoom));
 
-// const player = createPlayer(k,k.width() /2, k.height() / 2, mainRoom);
-// const obj = createObject(k,k.width() /2, k.height() / 2, 90, mainRoom);
+let mainRoomState = {
+    [Direction.North] : false, 
+    [Direction.South] : false, 
+    [Direction.East] : false, 
+    [Direction.West] : false, 
+}
+export function updateMainRoomWallState(wall)
+{
+    mainRoomState[wall.mainRoomWallDirection] = wall.reflecting;
+    //can set adjacents easily
+    setRoomEnabled(k,mainRoom.northRoom(),mainRoomState[Direction.North]);
+    setRoomEnabled(k,mainRoom.southRoom(),mainRoomState[Direction.South]);
+    setRoomEnabled(k,mainRoom.eastRoom(),mainRoomState[Direction.East]);
+    setRoomEnabled(k,mainRoom.westRoom(),mainRoomState[Direction.West]);
+
+    //turn off all walls excpet main room walls
+    rooms.forEach(room => {
+        room.getWalls().forEach(wall => {
+            if(wall.isMainRoomWall){return;}
+            wall.setVisible(false);
+        });
+    });
+
+    //turn on all enabled walls
+    rooms.forEach(room => {
+        if(room.isMainRoom || !room.enabled) return;
+        room.getWalls().forEach(wall => {
+            if(!wall.isMainRoomWall)
+            {
+                wall.setVisible(true);
+            }
+        });
+    });
+}
+
+// var missedLines = [];
+// k.onUpdate(() => {
+//     missedLines.forEach(line => {
+//         k.drawLine(
+//             line
+//         )
+//     });
+// });
+
 
 // player.checkCollision()
 // Check if someone is picked
