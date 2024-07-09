@@ -2,6 +2,7 @@ import startGame, { Anchor } from "kaplay"
 import { clearDrag, curDraggin } from "./components/drag";
 import { createWall } from "./prims/wall";
 import { createRoom, setRoomEnabled } from "./prims/room";
+import { addButton } from "./prims/button";
 
 export enum Direction {
     North,
@@ -17,6 +18,11 @@ export const backgroundColor = k.color(20,20,20);
 
 k.setBackground(backgroundColor.color);
 k.debug.log(k.VERSION);
+
+addButton(k,"debug",k.vec2(100, 100), () => {
+    k.debug.log("adding button");
+    k.debug.inspect = !k.debug.inspect;
+});
 
 //look at 
 /*
