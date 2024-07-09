@@ -15,6 +15,8 @@ export const roomDim = 200;
 export const roomRowLength = 5;
 export const k = startGame();
 export const backgroundColor = k.color(20,20,20);
+export const playerSize = 20;
+
 
 k.setBackground(backgroundColor.color);
 k.debug.log(k.VERSION);

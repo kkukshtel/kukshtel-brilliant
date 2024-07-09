@@ -1,11 +1,11 @@
-import { DrawLinesOpt, KaboomCtx } from "kaplay";
+import { DrawLineOpt, KaboomCtx } from "kaplay";
 import { drag } from "../components/drag";
-import { player, roomDim } from "../main";
+import { player, playerSize, roomDim } from "../main";
 
-let rayPreview : DrawLinesOpt = null;
+let rayPreview : DrawLineOpt = null;
 export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection = false)
 {
-    let triangleHeight = 40;
+    let triangleHeight = playerSize * 2;
 
     let obj = k.add([
         k.pos(x, y),
@@ -53,15 +53,13 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection 
     {
         obj.onHover(() => {
             k.debug.log(obj.pos + " " + player.pos);
+            let s = obj.pos.sub(player.pos).unit().scale(playerSize);
             rayPreview = 
             {
-                pts: [
-                    obj.pos,
-                    player.pos,
-                ],
-                join: "round",
-                cap: "round",
-                width: 20,
+                p1 : obj.pos,
+                p2 : player.pos.add(s),
+                // cap: "round",
+                width: 5,
             }
         });
 
@@ -73,7 +71,7 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection 
     k.onDraw(() => {
         if(rayPreview)
         {
-            k.drawLines(rayPreview);
+            k.drawLine(rayPreview);
         }
     });
     

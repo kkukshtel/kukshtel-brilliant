@@ -1,10 +1,9 @@
 import { KaboomCtx } from "kaplay";
 import { drag } from "../components/drag";
-import { roomDim } from "../main";
+import { playerSize, roomDim } from "../main";
 
 export function createPlayer(k : KaboomCtx,x,y,owningRoom,isReflection = false)
 {
-    let playerSize = 20;
     let player = k.add([
         k.rotate(0),
         k.pos(x, y),
