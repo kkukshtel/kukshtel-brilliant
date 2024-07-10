@@ -1,20 +1,17 @@
 import { KaboomCtx } from "kaplay";
 import { drag } from "../components/drag";
-import { playerSize, roomDim } from "../main";
+import { backgroundColor, playerSize, roomDim } from "../main";
 
 export function createPlayer(k : KaboomCtx,x,y,owningRoom,isReflection = false)
 {
     let player = k.add([
         k.rotate(0),
         k.pos(x, y),
+        k.area(),
+        k.anchor("center"),
         "moveableObj",
-        // drag(k),
-        // k.drawTriangle({p1 : k.vec2(0, -20), p2 : k.vec2(10, 10), p3 : k.vec2(-10, 10)}),
         k.circle(playerSize),
         k.color(153,50,204),
-        // k.area(),
-        // k.anchor("center"),
-        // k.body(),
         k.outline(3, k.rgb(255, 0, 255)),
         {
             hovered : false,
@@ -24,15 +21,27 @@ export function createPlayer(k : KaboomCtx,x,y,owningRoom,isReflection = false)
             reflections : [],
             addReflection(reflectedPlayer, room) {
                 this.reflections.push({reflectedPlayer, room});
+            },
+            setHidden(value) {
+                if(value)
+                {
+                    this.color = backgroundColor.color;
+                    this.outline.color = backgroundColor.color;
+                    this.use("hidden");
+                }
+                else
+                {
+                    this.color = k.rgb(153,50,204);
+                    this.outline.color = k.rgb(255, 0, 255);
+                    this.unuse("hidden");
+                }
             }
         }
     ]);
 
     if(!isReflection)
     {
-        player.use(k.area());
         player.use(drag(k));
-        player.use(k.anchor("center"));
         player.use(k.body());
     }
 
@@ -90,15 +99,6 @@ export function createPlayer(k : KaboomCtx,x,y,owningRoom,isReflection = false)
             });
         });
     }
-
-
-    // player.onDrag(() => {
-    //     k.debug.log("dragging player");
-    // });
-    
-    // player.onDragUpdate(() => {
-    //     k.debug.log("drag update");
-    // });
 
     return player;
 }

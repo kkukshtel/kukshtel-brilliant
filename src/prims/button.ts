@@ -1,5 +1,4 @@
 export function addButton(k,txt, p, f) {
-    // add a parent background object
     const btn = k.add([
         k.rect(240, 80, { radius: 8 }),
         k.pos(p),
@@ -9,7 +8,6 @@ export function addButton(k,txt, p, f) {
         k.outline(4),
     ]);
 
-    // add a child object that displays the text
     btn.add([
         k.text(txt),
         k.anchor("center"),

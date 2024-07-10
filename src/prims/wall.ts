@@ -10,7 +10,6 @@ export function createWall(k : KaboomCtx, x, y, width, height, rotation)
         k.rect(width, height),
         k.color(backgroundColor.color),
         k.area(),
-        // k.outline(3, k.rgb(0, 0, 0)),
         k.body({isStatic: true}),
         {
             isMainRoomWall : false,
@@ -35,18 +34,10 @@ export function createWall(k : KaboomCtx, x, y, width, height, rotation)
         {
             k.debug.log("clicked wall");
             wall.reflecting = !wall.reflecting;
-            wall.color = wall.reflecting ? k.rgb(180,180,0) : k.rgb(80,80,80);
+            wall.color = wall.reflecting ? k.rgb(10,180,255) : k.rgb(80,80,80);
             updateMainRoomWallState(wall);
         }
     });
-
-    // player.onDrag(() => {
-    //     k.debug.log("dragging player");
-    // });
-    
-    // player.onDragUpdate(() => {
-    //     k.debug.log("drag update");
-    // });
 
     return wall;
 }

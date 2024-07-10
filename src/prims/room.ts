@@ -3,19 +3,8 @@ import { KaboomCtx } from "kaplay";
 import { createObject } from "./object";
 import { createPlayer } from "./player";
 
-
-
 export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
 {
-    //loop through all the enabled rooms and update their walls to be visible
-    let raycastDirections = [
-        //raycast directions are opposite our directions
-        k.vec2(0,-1), //north
-        k.vec2(0,1), //south
-        k.vec2(1,0), //east
-        k.vec2(-1,0), //west
-    ];
-
     let newRoom = k.add([
         k.rotate(0),
         k.pos(x, y),
@@ -32,6 +21,7 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
             isReflectedRoom : false,
             enabled : true,
             isMainRoom : false,
+            ownedObjects : [],
             left() {
                 return this.pos.x - roomDim / 2;
             },
@@ -52,9 +42,11 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
                 if(this === mainRoom)
                 {
                     let player = createPlayer(k,x,y,this);
+                    this.ownedObjects.push(player);
                     rooms.forEach(room => {
                         if(room === mainRoom) return;
                         let additionalPlayer = createPlayer(k,room.x,room.y,room,true);
+                        room.ownedObjects.push(additionalPlayer);
                         player.addReflection(additionalPlayer, room);
                     });
                     return player;
@@ -65,9 +57,11 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
                 {
                     let id = getNextObjectID() + "";
                     let obj = createObject(k,x,y,90,this,id);
+                    this.ownedObjects.push(obj);
                     rooms.forEach(room => {
                         if(room === mainRoom) return;
                         let reflectedObject = createObject(k,room.x,room.y,90,room,id,true);
+                        room.ownedObjects.push(reflectedObject);
                         obj.addReflection(reflectedObject, room);
                     });
                     return obj;
@@ -77,11 +71,16 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
                 let walls = [];
                 let origin = this.pos;
                 const MAX_DISTANCE = roomDim + roomDim / 2;
+                let raycastDirections = [
+                    k.vec2(0,-1),
+                    k.vec2(0,1),
+                    k.vec2(1,0),
+                    k.vec2(-1,0),
+                ];
                 raycastDirections.forEach(direction => {
                     let dir = direction.scale(MAX_DISTANCE)
                     let hitWall = false;
                     while (!hitWall) {
-                        k.debug.log("testing " + dir.x + " " + dir.y + "from pos" + origin.x + " " + origin.y);
                         const hit = k.raycast(origin, dir, ["moveableObj","room"]);
                         if (!hit) {
                             break;
@@ -94,6 +93,15 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
                     }
                 });
                 return walls;
+            },
+            setEnabled(value)
+            {
+                this.enabled = value;
+                this.outline.color = value ? k.rgb(0, 0, 0) : k.rgb(20, 20, 20);
+                this.color = backgroundColor.color;
+                this.ownedObjects.forEach(obj => {
+                    obj.setHidden(!value);
+                });
             }
         }
     ]);
@@ -113,12 +121,6 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
     return newRoom;
 }
 
-export function setRoomEnabled(k : KaboomCtx, room, value)
-{
-    room.enabled = value;
-    room.outline.color = value ? k.rgb(0, 0, 0) : k.rgb(20, 20, 20);
-    room.color = backgroundColor.color;
-}
 
 function getRoomInDirectionFromRoom(room, direction : Direction)
 {
