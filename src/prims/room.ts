@@ -1,4 +1,4 @@
-import { Direction, backgroundColor, mainRoom, roomDim, roomRowLength, rooms } from "../main";
+import { Direction, backgroundColor, currentObjectID, getNextObjectID, mainRoom, roomDim, roomRowLength, rooms } from "../main";
 import { KaboomCtx } from "kaplay";
 import { createObject } from "./object";
 import { createPlayer } from "./player";
@@ -63,10 +63,11 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
             addObject() {
                 if(this === mainRoom)
                 {
-                    let obj = createObject(k,x,y,90,this);
+                    let id = getNextObjectID() + "";
+                    let obj = createObject(k,x,y,90,this,id);
                     rooms.forEach(room => {
                         if(room === mainRoom) return;
-                        let reflectedObject = createObject(k,room.x,room.y,90,room,true);
+                        let reflectedObject = createObject(k,room.x,room.y,90,room,id,true);
                         obj.addReflection(reflectedObject, room);
                     });
                     return obj;

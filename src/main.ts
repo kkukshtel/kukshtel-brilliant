@@ -3,6 +3,8 @@ import { clearDrag, curDraggin } from "./components/drag";
 import { createWall } from "./prims/wall";
 import { createRoom, setRoomEnabled } from "./prims/room";
 import { addButton } from "./prims/button";
+import { rayLine } from "./components/rayLine";
+import { easingLinear } from "kaplay/dist/declaration/math";
 
 export enum Direction {
     North,
@@ -16,7 +18,11 @@ export const roomRowLength = 5;
 export const k = startGame();
 export const backgroundColor = k.color(20,20,20);
 export const playerSize = 20;
-
+export let currentObjectID = 0;
+export function getNextObjectID()
+{
+    return currentObjectID++;
+}
 
 k.setBackground(backgroundColor.color);
 k.debug.log(k.VERSION);

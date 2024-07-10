@@ -1,9 +1,10 @@
 import { DrawLineOpt, KaboomCtx } from "kaplay";
 import { drag } from "../components/drag";
 import { player, playerSize, roomDim } from "../main";
+import { rayLine } from "../components/rayLine";
 
 let rayPreview : DrawLineOpt = null;
-export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection = false)
+export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,objectID : string,isReflection = false)
 {
     let triangleHeight = playerSize * 2;
 
@@ -11,8 +12,10 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection 
         k.pos(x, y),
         k.rotate(rotation),
         k.anchor("center"),
+        // k.body(),
         k.area({shape: new k.Rect(k.vec2(0,0), triangleHeight, triangleHeight)}),
         {
+            objID : objectID,
             hovered : false,
             owningRoom : owningRoom,
             draggable : !owningRoom.isReflectedRoom,
@@ -39,7 +42,7 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection 
                 ],
             }),
         k.outline(3, k.rgb(255, 0, 0)),
-        "moveableObj"
+        "moveableObj",
     ]);
 
     if(!obj.isReflection)
@@ -48,22 +51,82 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,isReflection 
         obj.use(k.body());
     }
 
-    
+    let rayLines = [];
     if(obj.isReflection)
     {
         obj.onHover(() => {
-            k.debug.log(obj.pos + " " + player.pos);
-            let s = obj.pos.sub(player.pos).unit().scale(playerSize);
+            var dir = obj.pos.sub(player.pos).unit();
+            let startOffset = dir.scale(playerSize + 10);
             rayPreview = 
             {
                 p1 : obj.pos,
-                p2 : player.pos.add(s),
+                p2 : player.pos.add(startOffset),
                 // cap: "round",
                 width: 5,
+                color : k.rgb(40, 40, 40),
             }
+
+            let MAX_TRACE_DEPTH = 10;
+            let traceDepth = 0;
+            let hitTargetObject = false;
+            let origin = player.pos.add(startOffset);
+            let direction = dir.scale(roomDim * 2);
+            let timerOffset = 0;
+            k.debug.log("raycast for object " + obj.objID);
+            while (traceDepth < MAX_TRACE_DEPTH && !hitTargetObject) {
+                const hit = k.raycast(origin, direction);
+                if (!hit) {
+                    // k.drawLine({
+                    //     p1: origin.sub(this.pos),
+                    //     p2: origin.add(direction).sub(this.pos),
+                    //     width: 1,
+                    //     color: this.color,
+                    // });
+                    break;
+                }
+                k.debug.log("hit object " + hit.object.objID);
+                if(hit.object.objID == obj.objID)
+                {
+                    hitTargetObject = true;
+                }
+                // // Draw hit point
+                // k.drawCircle({
+                //     pos: pos,
+                //     radius: 4,
+                //     color: this.color,
+                // });
+                // // Draw hit normal
+                // k.drawLine({
+                //     p1: pos,
+                //     p2: pos.add(hit.normal.scale(20)),
+                //     width: 1,
+                //     color: k.BLUE,
+                // });
+                rayLines.push(k.add([
+                    rayLine(k,origin,hit.point,1 + timerOffset)
+                ]));
+                timerOffset += 0.1;
+                // Draw hit distance
+                // k.drawLine({
+                //     p1: origin.sub(this.pos),
+                //     p2: pos,
+                //     width: 1,
+                //     color: this.color,
+                // });
+                // Offset the point slightly, otherwise it might be too close to the surface
+                // and give internal reflections
+                origin = hit.point.add(hit.normal.scale(0.001));
+                // Reflect vector
+                direction = direction.reflect(hit.normal);
+                traceDepth++;
+            }
+
         });
 
         obj.onHoverEnd(() => {
+            rayLines.forEach(ray => {
+                ray.destroy();
+            });
             rayPreview = null;
         });
     }
