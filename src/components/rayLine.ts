@@ -1,5 +1,6 @@
 import { Color, KaboomCtx, Vec2 } from "kaplay";
 
+//create a line component used for raycast tracing
 export function rayLine(k : KaboomCtx, color : Color, p1 : Vec2, p2 : Vec2, fadeTime, delay) {
     let opacity = 0;
     let delayAcc = 0;

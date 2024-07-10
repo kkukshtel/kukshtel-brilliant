@@ -1,5 +1,6 @@
 import { KaboomCtx, Vec2 } from "kaplay";
 
+//create a triangle component
 export function triangle(k : KaboomCtx, p1 : Vec2, p2 : Vec2, p3 : Vec2) {
     return {
         draw() {
@@ -15,11 +16,5 @@ export function triangle(k : KaboomCtx, p1 : Vec2, p2 : Vec2, p3 : Vec2) {
                 });
             }
         },
-        // update() {
-        //     if(opacity < 1)
-        //     {
-        //         opacity += k.dt() / fadeTime;
-        //     }
-        // }
     }
 }

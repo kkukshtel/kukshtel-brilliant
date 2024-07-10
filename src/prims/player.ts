@@ -47,6 +47,7 @@ export function createPlayer(k : KaboomCtx,x,y,owningRoom,isReflection = false)
 
     if(!player.isReflection)
     {
+        //lock the player to the room
         player.onUpdate(() => {
             //left wall
             if(player.pos.x - playerSize  < player.owningRoom.left())

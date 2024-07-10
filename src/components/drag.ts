@@ -1,8 +1,10 @@
 import { KaboomCtx } from "kaplay";
 
-// Keep track of the current draggin item
-export let curDraggin = null;
 
+export let curDraggin = null; //keep track of the current dragged object
+
+//create a drag component
+//mostly from https://play.kaplayjs.com/?example=drag
 export function drag(k: KaboomCtx) {
     // The displacement between object pos and mouse pos
     let offset = k.vec2(0);

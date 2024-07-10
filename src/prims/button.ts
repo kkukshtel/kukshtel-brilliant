@@ -14,8 +14,7 @@ export function addButton(k,txt, p, f) {
         k.color(0, 0, 0),
     ]);
 
-    // onClick() comes from area() component
-    // it runs once when the object is clicked
+    // route area()'s onclick to our passed in function
     btn.onClick(f);
 
     return btn;

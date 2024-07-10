@@ -34,10 +34,6 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
             bottom() {
                 return this.pos.y + roomDim / 2;
             },
-            northRoom(){return getRoomInDirectionFromRoom(this, Direction.North)},
-            southRoom(){return getRoomInDirectionFromRoom(this, Direction.South)},
-            eastRoom(){return getRoomInDirectionFromRoom(this, Direction.East)},
-            westRoom(){return getRoomInDirectionFromRoom(this, Direction.West)},
             addPlayer() {
                 if(this === mainRoom)
                 {
@@ -119,38 +115,4 @@ export function createRoom(k : KaboomCtx,x, y, xindex, yindex)
     });
 
     return newRoom;
-}
-
-
-function getRoomInDirectionFromRoom(room, direction : Direction)
-{
-    let roomIndex = rooms.indexOf(room);
-    switch (direction) {
-        case Direction.North:
-            if(room.X - roomRowLength < 0)
-            {
-                return null;
-            }
-            return rooms[roomIndex - roomRowLength];
-        case Direction.South:
-            if(room.X + roomRowLength >= rooms.length)
-            {
-                return null;
-            }
-            return rooms[roomIndex + roomRowLength];
-        case Direction.East:
-            if(room.x == roomRowLength - 1)
-            {
-                return null;
-            }
-            return rooms[roomIndex + 1];
-        case Direction.West:
-            if(room.x == 0)
-            {
-                return null;
-            }
-            return rooms[roomIndex - 1];
-        default:
-            return null;
-    }
 }

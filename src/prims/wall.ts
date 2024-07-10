@@ -30,9 +30,9 @@ export function createWall(k : KaboomCtx, x, y, width, height, rotation)
     ]);
 
     wall.onClick(() => {
+        //can only toggle main room walls
         if(wall.isMainRoomWall)
         {
-            k.debug.log("clicked wall");
             wall.reflecting = !wall.reflecting;
             wall.color = wall.reflecting ? k.rgb(10,180,255) : k.rgb(80,80,80);
             updateMainRoomWallState(wall);

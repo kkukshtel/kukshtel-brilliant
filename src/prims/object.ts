@@ -1,4 +1,4 @@
-import { DrawLineOpt, KaboomCtx } from "kaplay";
+import { KaboomCtx } from "kaplay";
 import { drag } from "../components/drag";
 import { player, playerSize, roomDim, roomRowLength } from "../main";
 import { rayLine } from "../components/rayLine";
@@ -6,8 +6,8 @@ import { triangle } from "../components/triangle";
 
 export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,objectID : string,isReflection = false)
 {
+    //make the triangle be roughly the size of the player
     let triangleHeight = playerSize * 2;
-
     let obj = k.add([
         k.pos(x, y),
         k.rotate(rotation),
@@ -47,6 +47,8 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,objectID : st
         "moveableObj"
     ]);
 
+    //create the rendered triangle and child it to the parent object
+    //this allows us to more easily control the rotation of the triangle and the collider
     obj.add([
         k.pos(0, -triangleHeight / 2),
         triangle(k,
@@ -56,6 +58,7 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,objectID : st
         "moveableObj"
     ]);
 
+    //can only drag objects in the main room
     if(!obj.isReflection)
     {
         obj.use(drag(k));
@@ -67,6 +70,7 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,objectID : st
     let rayPreview;
     if(obj.isReflection)
     {
+        //we only want to show the ray preview when we are hovering over reflected objects
         obj.onHover(() => {
             if(obj.is("hidden")){return;}
             var dir = obj.pos.sub(player.pos).unit();
@@ -75,41 +79,43 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,objectID : st
             let initialDirection = dir.scale(roomDim * roomRowLength);
 
             //cast a ray to the distant object to see if we can actually see it
+            //ignore walls and rooms
             const initialHit = k.raycast(origin, initialDirection, ["wall","room"]);
             let isValidPath = false;
-            if(initialHit)
+            if(initialHit) //if we hit something
             {
-                //if we hit something
+                //and what we hit was the object we are hovering over
                 if(initialHit.object.id === obj.id)
                 {
-                    //and what we hit was the object we are hovering over
                     isValidPath = true;
                 }
-
+                //draw the ray preview
                 rayPreview = k.add([
                     rayLine(k,isValidPath ? k.rgb(40, 128, 40) : k.rgb(128, 40, 40),origin,initialHit.point,0.1,0)
                 ]);
             }
-
+            
+            //if we had an invalid path, dont do the line tracing
             if(!isValidPath){return;}
+
             rayLines = [];
             rayPoints = [];
-
-
             let MAX_TRACE_DEPTH = 10;
             let traceDepth = 0;
             let hitTargetObject = false;
             let direction = dir.scale(roomDim * 2);
+            //we raycast from the viewer to the object to get the path,
+            //then we reverse that path to show the object to the viewer
             while (traceDepth < MAX_TRACE_DEPTH && !hitTargetObject) {
                 const hit = k.raycast(origin, direction);
                 if (!hit) {
                     break;
                 }
-                k.debug.log("hit object " + hit.object.objID);
                 if(hit.object.objID == obj.objID)
                 {
                     hitTargetObject = true;
                 }
+                //buffer the line points here
                 rayPoints.push({"p1":k.vec2(origin),"p2":k.vec2(hit.point)});
                 // Offset the point slightly, otherwise it might be too close to the surface
                 // and give internal reflections
@@ -119,6 +125,7 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,objectID : st
                 traceDepth++;
             }
 
+            //draw the rays
             let timerOffset = 0;
             rayPoints.reverse().forEach(p => {
                 rayLines.push(k.add([
@@ -129,19 +136,20 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,objectID : st
         });
 
         obj.onHoverEnd(() => {
+            //cleanup our hovers
             rayLines.forEach(ray => {
                 ray.destroy();
             });
-            if(rayPreview)
-                {
-                    rayPreview.destroy();
-
-                }
+            if(rayPreview) {
+                rayPreview.destroy();
+            }
         });
     }
 
+    //this is for objects in the main room
     if(!obj.isReflection)
     {
+        //we want to basically lock them inside the room so we prevent them from moving past room boundaries
         obj.onUpdate(() => {
             //left wall
             if(obj.pos.x - (triangleHeight/2)  < obj.owningRoom.left())
@@ -167,7 +175,7 @@ export function createObject(k : KaboomCtx,x,y,rotation,owningRoom,objectID : st
                 obj.pos.y = obj.owningRoom.top() + (triangleHeight/2);
             }
     
-            //update reflections
+            //update reflection positions, as they move when the main object moves
             obj.reflections.forEach(reflection => {
                 let roomDiff = k.vec2(reflection.room.xIndex, reflection.room.yIndex).sub(k.vec2(owningRoom.xIndex, owningRoom.yIndex));
                 let rX, rY;
